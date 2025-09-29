@@ -1,0 +1,299 @@
+@page "/tracking"
+@using ParcelTracking.Core.DTOs
+@using ParcelTracking.Web.Services
+@inject AuthService AuthService
+@inject ParcelTrackingService TrackingService
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<PageTitle>Parcel Tracking</PageTitle>
+
+@if (!AuthService.IsAuthenticated)
+{
+    <div class="alert alert-warning">
+        <p>You must be logged in to access parcel tracking.</p>
+        <a href="/login" class="btn btn-primary">Login</a>
+    </div>
+}
+else
+{
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <h2>Parcel Tracking System</h2>
+                <p class="text-muted">Welcome, @AuthService.Username!</p>
+            </div>
+        </div>
+
+        <!-- Track Parcel Section -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h4>Track Your Parcel</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="input-group mb-3">
+                            <input type="text" @bind="trackingNumber" @onkeypress="HandleKeyPress" 
+                                   class="form-control" placeholder="Enter tracking number (e.g., TRK001)" />
+                            <button class="btn btn-primary" @onclick="TrackParcel" disabled="@isTracking">
+                                @if (isTracking)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                }
+                                Track
+                            </button>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(trackingError))
+                        {
+                            <div class="alert alert-danger">@trackingError</div>
+                        }
+
+                        @if (trackedParcel != null)
+                        {
+                            <div class="alert alert-success">
+                                <h5>Parcel Found!</h5>
+                                <strong>Tracking Number:</strong> @trackedParcel.TrackingNumber<br />
+                                <strong>Status:</strong> <span class="badge bg-info">@trackedParcel.Status</span><br />
+                                <strong>Created:</strong> @trackedParcel.CreatedAt.ToString("yyyy-MM-dd HH:mm")<br />
+                                <strong>Last Updated:</strong> @trackedParcel.UpdatedAt.ToString("yyyy-MM-dd HH:mm")
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Real-time Updates</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="badge @(connectionStatus == "Connected" ? "bg-success" : "bg-danger")">
+                            SignalR: @connectionStatus
+                        </div>
+                        @if (recentUpdates.Any())
+                        {
+                            <h6 class="mt-3">Recent Updates:</h6>
+                            <div class="list-group list-group-flush" style="max-height: 200px; overflow-y: auto;">
+                                @foreach (var update in recentUpdates.Take(5))
+                                {
+                                    <div class="list-group-item p-2">
+                                        <small>
+                                            <strong>@update.TrackingNumber</strong><br />
+                                            Status: @update.Status<br />
+                                            <span class="text-muted">@update.UpdatedAt.ToString("HH:mm:ss")</span>
+                                        </small>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- All Parcels Section -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h4>All Parcels</h4>
+                        <button class="btn btn-outline-primary" @onclick="LoadAllParcels">
+                            <i class="bi bi-arrow-clockwise"></i> Refresh
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        @if (allParcels == null)
+                        {
+                            <div class="text-center">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        }
+                        else if (!allParcels.Any())
+                        {
+                            <p class="text-muted">No parcels found.</p>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Tracking Number</th>
+                                            <th>Status</th>
+                                            <th>Created</th>
+                                            <th>Last Updated</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var parcel in allParcels)
+                                        {
+                                            <tr>
+                                                <td><strong>@parcel.TrackingNumber</strong></td>
+                                                <td>
+                                                    <span class="badge bg-info">@parcel.Status</span>
+                                                </td>
+                                                <td>@parcel.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                                                <td>@parcel.UpdatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private string trackingNumber = string.Empty;
+    private string? trackingError;
+    private bool isTracking = false;
+    private ParcelDto? trackedParcel;
+    private IEnumerable<ParcelDto>? allParcels;
+    private List<ParcelDto> recentUpdates = new();
+    private string connectionStatus = "Disconnected";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!AuthService.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        // Set up SignalR event handlers
+        TrackingService.ParcelStatusUpdated += OnParcelStatusUpdated;
+        TrackingService.ParcelCreated += OnParcelCreated;
+
+        // Start SignalR connection
+        var baseUrl = Navigation.BaseUri.TrimEnd('/');
+        var apiUrl = baseUrl.Replace(":5001", ":5000"); // Adjust for different ports
+        
+        await TrackingService.StartSignalRConnectionAsync(apiUrl);
+        connectionStatus = "Connected";
+        StateHasChanged();
+
+        // Load initial data
+        await LoadAllParcels();
+    }
+
+    private async Task TrackParcel()
+    {
+        if (string.IsNullOrWhiteSpace(trackingNumber))
+        {
+            trackingError = "Please enter a tracking number";
+            return;
+        }
+
+        isTracking = true;
+        trackingError = null;
+        trackedParcel = null;
+        StateHasChanged();
+
+        try
+        {
+            trackedParcel = await TrackingService.GetParcelAsync(trackingNumber.Trim());
+            if (trackedParcel == null)
+            {
+                trackingError = $"No parcel found with tracking number: {trackingNumber}";
+            }
+            else
+            {
+                // Join SignalR group for this tracking number
+                await TrackingService.JoinTrackingGroupAsync(trackedParcel.TrackingNumber);
+            }
+        }
+        catch (Exception ex)
+        {
+            trackingError = "An error occurred while tracking the parcel. Please try again.";
+        }
+        finally
+        {
+            isTracking = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadAllParcels()
+    {
+        try
+        {
+            allParcels = await TrackingService.GetAllParcelsAsync();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            // Handle error silently or show notification
+        }
+    }
+
+    private async Task HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await TrackParcel();
+        }
+    }
+
+    private void OnParcelStatusUpdated(ParcelDto parcel)
+    {
+        // Add to recent updates
+        recentUpdates.Insert(0, parcel);
+        if (recentUpdates.Count > 10)
+        {
+            recentUpdates.RemoveAt(recentUpdates.Count - 1);
+        }
+
+        // Update tracked parcel if it's the same one
+        if (trackedParcel?.Id == parcel.Id)
+        {
+            trackedParcel = parcel;
+        }
+
+        // Update in all parcels list
+        if (allParcels != null)
+        {
+            var parcelList = allParcels.ToList();
+            var existingIndex = parcelList.FindIndex(p => p.Id == parcel.Id);
+            if (existingIndex >= 0)
+            {
+                parcelList[existingIndex] = parcel;
+                allParcels = parcelList;
+            }
+        }
+
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void OnParcelCreated(ParcelDto parcel)
+    {
+        // Add to recent updates
+        recentUpdates.Insert(0, parcel);
+
+        // Add to all parcels list
+        if (allParcels != null)
+        {
+            var parcelList = allParcels.ToList();
+            parcelList.Insert(0, parcel);
+            allParcels = parcelList;
+        }
+
+        InvokeAsync(StateHasChanged);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        TrackingService.ParcelStatusUpdated -= OnParcelStatusUpdated;
+        TrackingService.ParcelCreated -= OnParcelCreated;
+        await TrackingService.DisposeAsync();
+    }
+}
