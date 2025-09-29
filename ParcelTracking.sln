@@ -1,0 +1,62 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ParcelTracking.Core", "ParcelTracking.Core\ParcelTracking.Core.csproj", "{5267B974-B044-4132-A3D9-DC5E966F10B4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ParcelTracking.Api", "ParcelTracking.Api\ParcelTracking.Api.csproj", "{1CD53522-1486-4D87-AF0C-483E432AC39E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ParcelTracking.Web", "ParcelTracking.Web\ParcelTracking.Web.csproj", "{8959C653-572F-49B6-9AFA-D9DE2E0744AC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5267B974-B044-4132-A3D9-DC5E966F10B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5267B974-B044-4132-A3D9-DC5E966F10B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5267B974-B044-4132-A3D9-DC5E966F10B4}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{5267B974-B044-4132-A3D9-DC5E966F10B4}.Debug|x64.Build.0 = Debug|Any CPU
+		{5267B974-B044-4132-A3D9-DC5E966F10B4}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{5267B974-B044-4132-A3D9-DC5E966F10B4}.Debug|x86.Build.0 = Debug|Any CPU
+		{5267B974-B044-4132-A3D9-DC5E966F10B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5267B974-B044-4132-A3D9-DC5E966F10B4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5267B974-B044-4132-A3D9-DC5E966F10B4}.Release|x64.ActiveCfg = Release|Any CPU
+		{5267B974-B044-4132-A3D9-DC5E966F10B4}.Release|x64.Build.0 = Release|Any CPU
+		{5267B974-B044-4132-A3D9-DC5E966F10B4}.Release|x86.ActiveCfg = Release|Any CPU
+		{5267B974-B044-4132-A3D9-DC5E966F10B4}.Release|x86.Build.0 = Release|Any CPU
+		{1CD53522-1486-4D87-AF0C-483E432AC39E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1CD53522-1486-4D87-AF0C-483E432AC39E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1CD53522-1486-4D87-AF0C-483E432AC39E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1CD53522-1486-4D87-AF0C-483E432AC39E}.Debug|x64.Build.0 = Debug|Any CPU
+		{1CD53522-1486-4D87-AF0C-483E432AC39E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1CD53522-1486-4D87-AF0C-483E432AC39E}.Debug|x86.Build.0 = Debug|Any CPU
+		{1CD53522-1486-4D87-AF0C-483E432AC39E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1CD53522-1486-4D87-AF0C-483E432AC39E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1CD53522-1486-4D87-AF0C-483E432AC39E}.Release|x64.ActiveCfg = Release|Any CPU
+		{1CD53522-1486-4D87-AF0C-483E432AC39E}.Release|x64.Build.0 = Release|Any CPU
+		{1CD53522-1486-4D87-AF0C-483E432AC39E}.Release|x86.ActiveCfg = Release|Any CPU
+		{1CD53522-1486-4D87-AF0C-483E432AC39E}.Release|x86.Build.0 = Release|Any CPU
+		{8959C653-572F-49B6-9AFA-D9DE2E0744AC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8959C653-572F-49B6-9AFA-D9DE2E0744AC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8959C653-572F-49B6-9AFA-D9DE2E0744AC}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8959C653-572F-49B6-9AFA-D9DE2E0744AC}.Debug|x64.Build.0 = Debug|Any CPU
+		{8959C653-572F-49B6-9AFA-D9DE2E0744AC}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8959C653-572F-49B6-9AFA-D9DE2E0744AC}.Debug|x86.Build.0 = Debug|Any CPU
+		{8959C653-572F-49B6-9AFA-D9DE2E0744AC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8959C653-572F-49B6-9AFA-D9DE2E0744AC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8959C653-572F-49B6-9AFA-D9DE2E0744AC}.Release|x64.ActiveCfg = Release|Any CPU
+		{8959C653-572F-49B6-9AFA-D9DE2E0744AC}.Release|x64.Build.0 = Release|Any CPU
+		{8959C653-572F-49B6-9AFA-D9DE2E0744AC}.Release|x86.ActiveCfg = Release|Any CPU
+		{8959C653-572F-49B6-9AFA-D9DE2E0744AC}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

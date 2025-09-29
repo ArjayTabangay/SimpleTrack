@@ -1,0 +1,64 @@
+@inject AuthService AuthService
+@inject IJSRuntime JS
+
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">
+            <i class="bi bi-box-seam"></i> Parcel Tracking
+        </a>
+    </div>
+</div>
+
+<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+
+<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+    <nav class="nav flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+            </NavLink>
+        </div>
+
+        @if (AuthService.IsAuthenticated)
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="tracking">
+                    <span class="bi bi-search-nav-menu" aria-hidden="true"></span> Track Parcels
+                </NavLink>
+            </div>
+
+            <div class="nav-item px-3">
+                <div class="nav-link text-muted">
+                    <span class="bi bi-person-fill" aria-hidden="true"></span> @AuthService.Username
+                </div>
+            </div>
+
+            <div class="nav-item px-3">
+                <button class="nav-link btn btn-link text-start" @onclick="HandleLogout">
+                    <span class="bi bi-box-arrow-right" aria-hidden="true"></span> Logout
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="login">
+                    <span class="bi bi-box-arrow-in-right-nav-menu" aria-hidden="true"></span> Login
+                </NavLink>
+            </div>
+        }
+    </nav>
+</div>
+
+@code {
+    private async Task HandleLogout()
+    {
+        var confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to logout?");
+        if (confirmed)
+        {
+            AuthService.Logout();
+            StateHasChanged();
+        }
+    }
+}
+
