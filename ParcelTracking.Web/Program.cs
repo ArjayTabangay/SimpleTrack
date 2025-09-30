@@ -1,6 +1,7 @@
 using ParcelTracking.Web.Components;
 using ParcelTracking.Web.Services;
 using MudBlazor.Services;
+using MudBlazor;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,7 +10,52 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 // Add MudBlazor services
-builder.Services.AddMudServices();
+builder.Services.AddMudServices(config =>
+{
+    config.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomRight;
+});
+
+// Custom minimal black->gray theme (no green)
+var darkGrayTheme = new MudTheme
+{
+    PaletteDark = new PaletteDark
+    {
+        Primary = "#212121",
+        Secondary = "#424242",
+        Background = "#121212",
+        Surface = "#1E1E1E",
+        AppbarBackground = "#1C1C1C",
+        DrawerBackground = "#1A1A1A",
+        TextPrimary = "#FFFFFF",
+        TextSecondary = "#B0B0B0",
+        Divider = "#2E2E2E",
+        Success = "#424242", // neutralized
+        Info = "#616161",
+        Warning = "#757575",
+        Error = "#9E9E9E"
+    },
+    PaletteLight = new PaletteLight
+    {
+        Primary = "#212121",
+        Secondary = "#424242",
+        Background = "#F5F5F5",
+        Surface = "#FFFFFF",
+        AppbarBackground = "#212121",
+        DrawerBackground = "#FAFAFA",
+        TextPrimary = "#111111",
+        TextSecondary = "#4F4F4F",
+        Divider = "#E0E0E0",
+        Success = "#616161",
+        Info = "#757575",
+        Warning = "#9E9E9E",
+        Error = "#BDBDBD"
+    }
+};
+
+builder.Services.AddSingleton(darkGrayTheme);
+
+// JWT delegating handler
+builder.Services.AddTransient<JwtAuthorizationHandler>();
 
 // Configure HttpClient for API calls
 var apiBaseUrl = builder.Configuration.GetValue<string>("ApiSettings:BaseUrl") ?? "https://localhost:5000";
@@ -23,11 +69,9 @@ builder.Services.AddHttpClient<ParcelTrackingService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
     client.DefaultRequestHeaders.Add("Accept", "application/json");
-});
+})
+.AddHttpMessageHandler<JwtAuthorizationHandler>();
 
-// Register services
-builder.Services.AddSingleton<AuthService>();
-builder.Services.AddScoped<ParcelTrackingService>();
 
 var app = builder.Build();
 

@@ -1,0 +1,39 @@
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components
+@inject ParcelTracking.Web.Services.AuthService AuthService
+@inject NavigationManager Navigation
+
+@code {
+    [Parameter] public RouteData? RouteData { get; set; }
+    [Parameter] public Type? DefaultLayout { get; set; }
+
+    private bool _shouldRenderRoute;
+    private bool _isRedirecting;
+
+    protected override void OnParametersSet()
+    {
+        _shouldRenderRoute = IsPublicRoute() || AuthService.IsAuthenticated;
+        if (!_shouldRenderRoute && !_isRedirecting)
+        {
+            _isRedirecting = true;
+            var returnUrl = Uri.EscapeDataString(Navigation.Uri);
+            // Immediate redirect so user doesn't see a blank protected page
+            Navigation.NavigateTo($"/login?returnUrl={returnUrl}");
+        }
+    }
+
+    private bool IsPublicRoute()
+    {
+        var relative = Navigation.ToBaseRelativePath(Navigation.Uri).Split('?')[0];
+        return string.IsNullOrEmpty(relative) || relative.StartsWith("login", StringComparison.OrdinalIgnoreCase);
+    }
+}
+
+@if (_shouldRenderRoute)
+{
+    <RouteView RouteData="RouteData" DefaultLayout="DefaultLayout" />
+}
+else
+{
+    <div class="text-center mt-5 text-muted small">Redirecting...</div>
+}
