@@ -1,0 +1,63 @@
+@page "/admin/tracking"
+@layout AdminLayout
+@inject ISnackbar Snackbar
+@implements IDisposable
+
+<PageTitle>Live Tracking - SimpleTrack Admin</PageTitle>
+
+<MudGrid Class="pa-4">
+    <MudItem xs="12">
+        <MudText Typo="Typo.h4" GutterBottom="true">Live Tracking</MudText>
+        <MudText Typo="Typo.body1" Color="Color.Secondary">A simplified placeholder while the full live tracking view is being refactored.</MudText>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="4">
+        <MudPaper Class="pa-4 mb-4">
+            <MudText Typo="Typo.subtitle1">Status</MudText>
+            <MudSwitch @bind-Value="_autoRefresh" Color="Color.Primary" Label="Auto Refresh" />
+            <MudText Typo="Typo.caption" Class="mt-2">Last update: @_lastUpdated:HH:mm:ss</MudText>
+            <MudButton Class="mt-3" Variant="Variant.Filled" Color="Color.Primary" OnClick="ShowTestNotification" StartIcon="@Icons.Material.Filled.Notifications">Test Notification</MudButton>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="8">
+        <MudPaper Class="pa-4 mb-4">
+            <MudText Typo="Typo.subtitle1" GutterBottom="true">Recent Activity (Sample)</MudText>
+            <div>
+                @foreach (var item in _sampleActivity)
+                {
+                    <div class="d-flex align-center mb-2">
+                        <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Class="mr-2" />
+                        <MudText Typo="Typo.body2">@item</MudText>
+                    </div>
+                }
+            </div>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private bool _autoRefresh = true;
+    private DateTime _lastUpdated = DateTime.UtcNow;
+    private Timer? _timer;
+    private readonly List<string> _sampleActivity = new()
+    {
+        "Parcel TRK001 status changed to In Transit",
+        "Parcel TRK002 created",
+        "Parcel TRK003 status changed to Delivered"
+    };
+
+    protected override void OnInitialized()
+    {
+        _timer = new Timer(_ =>
+        {
+            if (_autoRefresh)
+            {
+                _lastUpdated = DateTime.UtcNow;
+                InvokeAsync(StateHasChanged);
+            }
+        }, null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
+    }
+
+    private void ShowTestNotification() => Snackbar.Add("Live tracking placeholder is active.", Severity.Info);
+
+    public void Dispose() => _timer?.Dispose();
+}

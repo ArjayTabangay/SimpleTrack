@@ -1,0 +1,98 @@
+@using MudBlazor
+
+<div style="height: 300px; position: relative;">
+    @if (IsLoading)
+    {
+        <div class="d-flex align-center justify-center mud-height-full">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+        </div>
+    }
+    else
+    {
+        <div style="height: 100%; background: linear-gradient(45deg, rgba(46, 125, 50, 0.1), rgba(255, 111, 0, 0.1)); border-radius: 8px; padding: 20px;">
+            <div class="d-flex flex-column mud-height-full">
+                <!-- Chart Header -->
+                <div class="d-flex justify-space-between align-center mb-4">
+                    <div>
+                        <MudText Typo="Typo.body1" Class="font-weight-bold">Last 30 Days</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@GetTotalShipments() total shipments</MudText>
+                    </div>
+                    <div class="d-flex ga-2">
+                        <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">
+                            <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Size="Size.Small" Class="mr-1" />
+                            +8.2%
+                        </MudChip>
+                    </div>
+                </div>
+
+                <!-- Simple Chart Visualization -->
+                <div class="flex-grow-1 d-flex align-end justify-space-between" style="height: 200px;">
+                    @if (Data?.Any() == true)
+                    {
+                        @for (int i = 0; i < Math.Min(Data.Count, 15); i++)
+                        {
+                            var item = Data[i];
+                            var height = Math.Max(10, (item.Value / (double)GetMaxValue()) * 180);
+                            var color = GetBarColor(i);
+                            
+                            <div class="d-flex flex-column align-center" style="width: 20px;">
+                                <div style="height: @($"{height}px"); 
+                                           width: 16px; 
+                                           background: @color; 
+                                           border-radius: 2px 2px 0 0;
+                                           margin-bottom: 4px;
+                                           transition: all 0.3s ease;"
+                                     title="@item.Date: @item.Value shipments">
+                                </div>
+                                <MudText Typo="Typo.caption" 
+                                        Style="writing-mode: vertical-lr; text-orientation: mixed; font-size: 10px;">
+                                    @item.Date.Substring(item.Date.Length - 2)
+                                </MudText>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="d-flex align-center justify-center mud-width-full">
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">No data available</MudText>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public List<ChartDataPoint>? Data { get; set; }
+    [Parameter] public bool IsLoading { get; set; }
+
+    private int GetMaxValue()
+    {
+        return Data?.Max(x => x.Value) ?? 1;
+    }
+
+    private int GetTotalShipments()
+    {
+        return Data?.Sum(x => x.Value) ?? 0;
+    }
+
+    private string GetBarColor(int index)
+    {
+        var colors = new[]
+        {
+            "linear-gradient(135deg, #4CAF50, #2E7D32)",
+            "linear-gradient(135deg, #FF9800, #F57C00)",
+            "linear-gradient(135deg, #2196F3, #1976D2)",
+            "linear-gradient(135deg, #9C27B0, #7B1FA2)"
+        };
+        
+        return colors[index % colors.Length];
+    }
+
+    public class ChartDataPoint
+    {
+        public string Date { get; set; } = string.Empty;
+        public int Value { get; set; }
+    }
+}

@@ -1,0 +1,65 @@
+@using MudBlazor
+
+<MudCard Elevation="@Elevation" Class="@($"pa-4 {Class}")" Style="@Style">
+    <MudCardContent>
+        <div class="d-flex justify-space-between align-center">
+            <div class="flex-grow-1">
+                <MudText Typo="Typo.h4" Color="@ValueColor" Class="@ValueClass">
+                    @Value
+                </MudText>
+                <MudText Typo="Typo.body1" GutterBottom="true" Class="@TitleClass">
+                    @Title
+                </MudText>
+                @if (!string.IsNullOrEmpty(Subtitle))
+                {
+                    <MudText Typo="Typo.caption" Color="@SubtitleColor" Class="@SubtitleClass">
+                        @if (!string.IsNullOrEmpty(TrendIcon))
+                        {
+                            <MudIcon Icon="@TrendIcon" Size="Size.Small" Class="mr-1" />
+                        }
+                        @Subtitle
+                    </MudText>
+                }
+            </div>
+            
+            @if (!string.IsNullOrEmpty(Icon))
+            {
+                <MudAvatar Color="@IconColor" Size="@IconSize" Class="@IconClass">
+                    <MudIcon Icon="@Icon" />
+                </MudAvatar>
+            }
+        </div>
+        
+        @if (ChildContent != null)
+        {
+            <div class="mt-3">
+                @ChildContent
+            </div>
+        }
+    </MudCardContent>
+</MudCard>
+
+@code {
+    [Parameter] public string Value { get; set; } = string.Empty;
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public string? Icon { get; set; }
+    [Parameter] public string? TrendIcon { get; set; }
+    
+    [Parameter] public Color ValueColor { get; set; } = Color.Primary;
+    [Parameter] public Color SubtitleColor { get; set; } = Color.Success;
+    [Parameter] public Color IconColor { get; set; } = Color.Primary;
+    
+    [Parameter] public Size IconSize { get; set; } = Size.Large;
+    [Parameter] public int Elevation { get; set; } = 2;
+    
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
+    [Parameter] public string? ValueClass { get; set; }
+    [Parameter] public string? TitleClass { get; set; }
+    [Parameter] public string? SubtitleClass { get; set; }
+    [Parameter] public string? IconClass { get; set; }
+    
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public EventCallback OnClick { get; set; }
+}

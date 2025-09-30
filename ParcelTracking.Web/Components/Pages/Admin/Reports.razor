@@ -1,0 +1,423 @@
+@using MudBlazor
+@inject ISnackbar Snackbar
+@page "/admin/reports"
+@layout AdminLayout
+
+<PageTitle>Reports & Analytics - SimpleTrack Admin</PageTitle>
+
+<MudGrid>
+    <!-- Page Header -->
+    <MudItem xs="12">
+        <div class="d-flex justify-space-between align-center mb-6">
+            <div>
+                <MudText Typo="Typo.h3" GutterBottom="true">Reports & Analytics</MudText>
+                <MudText Typo="Typo.body1" Color="Color.Secondary">
+                    Comprehensive insights into your parcel tracking operations
+                </MudText>
+            </div>
+            <div class="d-flex ga-2">
+                <MudButton StartIcon="@Icons.Material.Filled.FileDownload" 
+                          Color="Color.Primary" 
+                          Variant="Variant.Filled"
+                          OnClick="ExportAllReports">
+                    Export All
+                </MudButton>
+                <MudButton StartIcon="@Icons.Material.Filled.Schedule" 
+                          Color="Color.Secondary" 
+                          Variant="Variant.Outlined"
+                          OnClick="ScheduleReport">
+                    Schedule Report
+                </MudButton>
+            </div>
+        </div>
+    </MudItem>
+
+    <!-- Time Range Selector -->
+    <MudItem xs="12">
+        <MudCard Elevation="2" Class="pa-4 mb-6">
+            <MudGrid>
+                <MudItem xs="12" md="3">
+                    <MudSelect @bind-Value="_selectedTimeRange" Label="Time Range" Variant="Variant.Outlined">
+                        <MudSelectItem Value="@("today")">Today</MudSelectItem>
+                        <MudSelectItem Value="@("week")">This Week</MudSelectItem>
+                        <MudSelectItem Value="@("month")">This Month</MudSelectItem>
+                        <MudSelectItem Value="@("quarter")">This Quarter</MudSelectItem>
+                        <MudSelectItem Value="@("year")">This Year</MudSelectItem>
+                        <MudSelectItem Value="@("custom")">Custom Range</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                
+                @if (_selectedTimeRange == "custom")
+                {
+                    <MudItem xs="12" md="3">
+                        <MudDatePicker @bind-Date="_startDate" Label="Start Date" Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12" md="3">
+                        <MudDatePicker @bind-Date="_endDate" Label="End Date" Variant="Variant.Outlined" />
+                    </MudItem>
+                }
+                
+                <MudItem xs="12" md="3">
+                    <MudButton StartIcon="@Icons.Material.Filled.Analytics" 
+                              Color="Color.Primary" 
+                              Variant="Variant.Filled"
+                              FullWidth="true"
+                              OnClick="GenerateReports">
+                        Generate Reports
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudCard>
+    </MudItem>
+
+    <!-- Key Metrics Row -->
+    <MudItem xs="12" sm="6" md="3">
+        <StatsCard Value="@_totalRevenue.ToString("C")"
+                   Title="Total Revenue"
+                   Subtitle="+15.3% from last period"
+                   Icon="@Icons.Material.Filled.AttachMoney"
+                   ValueColor="Color.Success"
+                   SubtitleColor="Color.Success"
+                   IconColor="Color.Success"
+                   TrendIcon="@Icons.Material.Filled.TrendingUp" />
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="3">
+        <StatsCard Value="@_totalParcels.ToString()"
+                   Title="Total Parcels"
+                   Subtitle="+8.7% from last period"
+                   Icon="@Icons.Material.Filled.LocalShipping"
+                   ValueColor="Color.Primary"
+                   SubtitleColor="Color.Success"
+                   IconColor="Color.Primary"
+                   TrendIcon="@Icons.Material.Filled.TrendingUp" />
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="3">
+        <StatsCard Value="@_deliveryRate.ToString("P1")"
+                   Title="Delivery Rate"
+                   Subtitle="+2.1% improvement"
+                   Icon="@Icons.Material.Filled.CheckCircle"
+                   ValueColor="Color.Success"
+                   SubtitleColor="Color.Success"
+                   IconColor="Color.Success"
+                   TrendIcon="@Icons.Material.Filled.TrendingUp" />
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="3">
+        <StatsCard Value="@_avgDeliveryTime.ToString("F1") hours"
+                   Title="Avg Delivery Time"
+                   Subtitle="-5.2% faster"
+                   Icon="@Icons.Material.Filled.Timer"
+                   ValueColor="Color.Info"
+                   SubtitleColor="Color.Success"
+                   IconColor="Color.Info"
+                   TrendIcon="@Icons.Material.Filled.TrendingDown" />
+    </MudItem>
+
+    <!-- Charts Row -->
+    <MudItem xs="12" md="6">
+        <MudCard Elevation="2" Class="pa-6">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">Revenue Trends</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        Monthly revenue breakdown and growth
+                    </MudText>
+                </CardHeaderContent>
+                <CardHeaderActions>
+                    <MudMenu Icon="@Icons.Material.Filled.MoreVert">
+                        <MudMenuItem OnClick="@(() => {})">Export Chart</MudMenuItem>
+                        <MudMenuItem OnClick="@(() => {})">View Data Table</MudMenuItem>
+                    </MudMenu>
+                </CardHeaderActions>
+            </MudCardHeader>
+            <MudCardContent>
+                <div style="height: 300px; background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                    <div class="text-center">
+                        <MudIcon Icon="@Icons.Material.Filled.ShowChart" Size="Size.Large" Color="Color.Surface" />
+                        <MudText Typo="Typo.h6" Color="Color.Surface">Revenue Chart</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Surface">Interactive chart placeholder</MudText>
+                    </div>
+                </div>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" md="6">
+        <MudCard Elevation="2" Class="pa-6">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">Delivery Performance</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        On-time delivery rates by service type
+                    </MudText>
+                </CardHeaderContent>
+                <CardHeaderActions>
+                    <MudMenu Icon="@Icons.Material.Filled.MoreVert">
+                        <MudMenuItem OnClick="@(() => {})">Export Chart</MudMenuItem>
+                        <MudMenuItem OnClick="@(() => {})">Configure Targets</MudMenuItem>
+                    </MudMenu>
+                </CardHeaderActions>
+            </MudCardHeader>
+            <MudCardContent>
+                <div class="d-flex flex-column ga-4">
+                    <div>
+                        <div class="d-flex justify-space-between align-center mb-2">
+                            <MudText Typo="Typo.body2">Express Delivery</MudText>
+                            <MudText Typo="Typo.body2" Class="font-weight-bold">96.4%</MudText>
+                        </div>
+                        <MudProgressLinear Color="Color.Success" Value="96.4" Size="Size.Medium" Rounded="true" />
+                    </div>
+                    
+                    <div>
+                        <div class="d-flex justify-space-between align-center mb-2">
+                            <MudText Typo="Typo.body2">Standard Delivery</MudText>
+                            <MudText Typo="Typo.body2" Class="font-weight-bold">94.2%</MudText>
+                        </div>
+                        <MudProgressLinear Color="Color.Primary" Value="94.2" Size="Size.Medium" Rounded="true" />
+                    </div>
+                    
+                    <div>
+                        <div class="d-flex justify-space-between align-center mb-2">
+                            <MudText Typo="Typo.body2">Economy Delivery</MudText>
+                            <MudText Typo="Typo.body2" Class="font-weight-bold">89.7%</MudText>
+                        </div>
+                        <MudProgressLinear Color="Color.Warning" Value="89.7" Size="Size.Medium" Rounded="true" />
+                    </div>
+                    
+                    <div>
+                        <div class="d-flex justify-space-between align-center mb-2">
+                            <MudText Typo="Typo.body2">International</MudText>
+                            <MudText Typo="Typo.body2" Class="font-weight-bold">87.3%</MudText>
+                        </div>
+                        <MudProgressLinear Color="Color.Info" Value="87.3" Size="Size.Medium" Rounded="true" />
+                    </div>
+                </div>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <!-- Geographic Distribution -->
+    <MudItem xs="12" md="8">
+        <MudCard Elevation="2" Class="pa-6">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">Geographic Distribution</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        Parcel volume and performance by region
+                    </MudText>
+                </CardHeaderContent>
+                <CardHeaderActions>
+                    <MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small">
+                        <MudButton>Volume</MudButton>
+                        <MudButton>Performance</MudButton>
+                        <MudButton>Revenue</MudButton>
+                    </MudButtonGroup>
+                </CardHeaderActions>
+            </MudCardHeader>
+            <MudCardContent>
+                <div style="height: 400px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; position: relative;">
+                    <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;">
+                        <div class="text-center">
+                            <MudIcon Icon="@Icons.Material.Filled.Public" Size="Size.Large" Color="Color.Surface" />
+                            <MudText Typo="Typo.h6" Color="Color.Surface">Interactive Map</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Surface">Geographic data visualization</MudText>
+                        </div>
+                    </div>
+                    
+                    <!-- Sample regional indicators -->
+                    <div style="position: absolute; top: 20%; left: 25%;">
+                        <MudTooltip Text="New York: 1,234 parcels">
+                            <MudFab Color="Color.Success" StartIcon="@Icons.Material.Filled.LocationOn" Size="Size.Small" />
+                        </MudTooltip>
+                    </div>
+                    <div style="position: absolute; top: 30%; right: 30%;">
+                        <MudTooltip Text="Los Angeles: 987 parcels">
+                            <MudFab Color="Color.Warning" StartIcon="@Icons.Material.Filled.LocationOn" Size="Size.Small" />
+                        </MudTooltip>
+                    </div>
+                    <div style="position: absolute; bottom: 25%; left: 35%;">
+                        <MudTooltip Text="Chicago: 756 parcels">
+                            <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.LocationOn" Size="Size.Small" />
+                        </MudTooltip>
+                    </div>
+                </div>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <!-- Top Performers -->
+    <MudItem xs="12" md="4">
+        <MudCard Elevation="2" Class="pa-6">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">Top Performing Routes</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        Best performing delivery routes
+                    </MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <div class="d-flex flex-column ga-3">
+                    @foreach (var route in _topRoutes)
+                    {
+                        <div class="d-flex align-center ga-3 pa-3" style="background: rgba(46, 125, 50, 0.05); border-radius: 8px;">
+                            <MudAvatar Color="@GetRouteColor(route.Rank)" Size="Size.Medium">
+                                <MudText Typo="Typo.h6">@route.Rank</MudText>
+                            </MudAvatar>
+                            <div class="flex-grow-1">
+                                <MudText Typo="Typo.body1" Class="font-weight-bold">@route.Name</MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">@route.Parcels parcels</MudText>
+                            </div>
+                            <div class="text-right">
+                                <MudText Typo="Typo.body1" Color="Color.Success">@route.PerformanceScore%</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">score</MudText>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <!-- Detailed Reports Table -->
+    <MudItem xs="12">
+        <MudCard Elevation="2" Class="pa-6">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">Detailed Performance Reports</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        Comprehensive performance metrics and KPIs
+                    </MudText>
+                </CardHeaderContent>
+                <CardHeaderActions>
+                    <MudButton StartIcon="@Icons.Material.Filled.FileDownload" 
+                              Color="Color.Primary" 
+                              Variant="Variant.Text"
+                              Size="Size.Small">
+                        Export Table
+                    </MudButton>
+                </CardHeaderActions>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudDataGrid T="ReportDataDto" Items="@_reportData" ReadOnly="true" Elevation="0">
+                    <Columns>
+                        <PropertyColumn Property="x => x.Metric" Title="Metric" />
+                        <PropertyColumn Property="x => x.CurrentPeriod" Title="Current Period" />
+                        <PropertyColumn Property="x => x.PreviousPeriod" Title="Previous Period" />
+                        <PropertyColumn Property="x => x.Change" Title="Change">
+                            <CellTemplate>
+                                <MudChip Size="Size.Small" 
+                                        Color="@(context.Item.Change.StartsWith('+') ? Color.Success : Color.Error)"
+                                        Variant="Variant.Text">
+                                    @context.Item.Change
+                                </MudChip>
+                            </CellTemplate>
+                        </PropertyColumn>
+                        <PropertyColumn Property="x => x.Target" Title="Target" />
+                        <PropertyColumn Property="x => x.Status" Title="Status">
+                            <CellTemplate>
+                                <MudChip Size="Size.Small" Color="@GetStatusColor(context.Item.Status)">
+                                    @context.Item.Status
+                                </MudChip>
+                            </CellTemplate>
+                        </PropertyColumn>
+                    </Columns>
+                </MudDataGrid>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private string _selectedTimeRange = "month";
+    private DateTime? _startDate = DateTime.Now.AddMonths(-1);
+    private DateTime? _endDate = DateTime.Now;
+    
+    private decimal _totalRevenue = 125690.50m;
+    private int _totalParcels = 8247;
+    private double _deliveryRate = 0.942;
+    private double _avgDeliveryTime = 18.5;
+    
+    private List<TopRouteDto> _topRoutes = new();
+    private List<ReportDataDto> _reportData = new();
+
+    protected override void OnInitialized()
+    {
+        LoadReportData();
+    }
+
+    private void LoadReportData()
+    {
+        _topRoutes = new List<TopRouteDto>
+        {
+            new() { Rank = 1, Name = "NYC ? Boston", Parcels = 1234, PerformanceScore = 97 },
+            new() { Rank = 2, Name = "LA ? SF", Parcels = 987, PerformanceScore = 95 },
+            new() { Rank = 3, Name = "Chicago ? Detroit", Parcels = 756, PerformanceScore = 93 },
+            new() { Rank = 4, Name = "Miami ? Orlando", Parcels = 654, PerformanceScore = 91 },
+            new() { Rank = 5, Name = "Seattle ? Portland", Parcels = 543, PerformanceScore = 89 }
+        };
+
+        _reportData = new List<ReportDataDto>
+        {
+            new() { Metric = "Total Parcels", CurrentPeriod = "8,247", PreviousPeriod = "7,592", Change = "+8.7%", Target = "8,500", Status = "On Track" },
+            new() { Metric = "Delivery Rate", CurrentPeriod = "94.2%", PreviousPeriod = "92.1%", Change = "+2.1%", Target = "95.0%", Status = "On Track" },
+            new() { Metric = "Avg Delivery Time", CurrentPeriod = "18.5h", PreviousPeriod = "19.5h", Change = "-5.2%", Target = "18.0h", Status = "Near Target" },
+            new() { Metric = "Customer Satisfaction", CurrentPeriod = "4.6/5", PreviousPeriod = "4.4/5", Change = "+4.5%", Target = "4.7/5", Status = "On Track" },
+            new() { Metric = "Cost per Parcel", CurrentPeriod = "$12.30", PreviousPeriod = "$13.10", Change = "-6.1%", Target = "$12.00", Status = "Near Target" }
+        };
+    }
+
+    private void GenerateReports()
+    {
+        Snackbar.Add("Generating reports for selected time range...", Severity.Info);
+        // TODO: Implement report generation
+    }
+
+    private void ExportAllReports()
+    {
+        Snackbar.Add("Exporting all reports...", Severity.Info);
+        // TODO: Implement export functionality
+    }
+
+    private void ScheduleReport()
+    {
+        Snackbar.Add("Opening schedule report dialog...", Severity.Info);
+        // TODO: Implement schedule report dialog
+    }
+
+    private Color GetRouteColor(int rank) => rank switch
+    {
+        1 => Color.Success,
+        2 => Color.Info,
+        3 => Color.Warning,
+        _ => Color.Default
+    };
+
+    private Color GetStatusColor(string status) => status switch
+    {
+        "On Track" => Color.Success,
+        "Near Target" => Color.Warning,
+        "Below Target" => Color.Error,
+        _ => Color.Default
+    };
+
+    private class TopRouteDto
+    {
+        public int Rank { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public int Parcels { get; set; }
+        public int PerformanceScore { get; set; }
+    }
+
+    private class ReportDataDto
+    {
+        public string Metric { get; set; } = string.Empty;
+        public string CurrentPeriod { get; set; } = string.Empty;
+        public string PreviousPeriod { get; set; } = string.Empty;
+        public string Change { get; set; } = string.Empty;
+        public string Target { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+    }
+}

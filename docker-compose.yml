@@ -1,5 +1,5 @@
 # Production docker-compose
-# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml -p app_prod up --build -d
+# Usage: docker compose -f docker-compose.yml -p app_prod up --build -d
 
 version: '3.8'
 

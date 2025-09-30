@@ -1,40 +1,14 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.StackExchangeRedis;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using ParcelTracking.Api.Data;
 using ParcelTracking.Api.Hubs;
 using ParcelTracking.Api.Services;
 using ParcelTracking.Core.Interfaces;
-using StackExchange.Redis;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// Support reading secret files specified by env vars with *_FILE (Docker secrets pattern)
-var jwtKeyFile = Environment.GetEnvironmentVariable("Jwt__Key_FILE");
-if (!string.IsNullOrEmpty(jwtKeyFile) && File.Exists(jwtKeyFile))
-{
-    var jwtKeyValue = File.ReadAllText(jwtKeyFile).Trim();
-    builder.Configuration["Jwt:Key"] = jwtKeyValue;
-}
-var pgPasswordFile = Environment.GetEnvironmentVariable("POSTGRES_PASSWORD_FILE");
-if (!string.IsNullOrEmpty(pgPasswordFile) && File.Exists(pgPasswordFile))
-{
-    var pgPass = File.ReadAllText(pgPasswordFile).Trim();
-    // replace password placeholder in connection string or set env var
-    var defaultConn = builder.Configuration.GetConnectionString("DefaultConnection") ?? string.Empty;
-    if (!string.IsNullOrEmpty(defaultConn))
-    {
-        // if connection string contains a placeholder REPLACE_WITH_SECRET, replace it
-        if (defaultConn.Contains("REPLACE_WITH_SECRET"))
-        {
-            defaultConn = defaultConn.Replace("REPLACE_WITH_SECRET", pgPass);
-            builder.Configuration.GetSection("ConnectionStrings")["DefaultConnection"] = defaultConn;
-        }
-    }
-}
 
 // Add services to the container
 builder.Services.AddControllers();

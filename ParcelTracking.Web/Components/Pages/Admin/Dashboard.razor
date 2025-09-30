@@ -1,0 +1,453 @@
+@using MudBlazor
+@inject ParcelTrackingService ParcelService
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@page "/admin"
+@layout AdminLayout
+
+<PageTitle>Dashboard - SimpleTrack Admin</PageTitle>
+
+<MudGrid>
+    <!-- Page Header -->
+    <MudItem xs="12">
+        <div class="d-flex justify-space-between align-center mb-6">
+            <div>
+                <MudText Typo="Typo.h3" GutterBottom="true">Dashboard</MudText>
+                <MudText Typo="Typo.body1" Color="Color.Secondary">
+                    Welcome back! Here's what's happening with your shipments today.
+                </MudText>
+            </div>
+            <div class="d-flex ga-2">
+                <MudButton StartIcon="@Icons.Material.Filled.Add" 
+                          Color="Color.Primary" 
+                          Variant="Variant.Filled"
+                          OnClick="CreateParcel">
+                    New Parcel
+                </MudButton>
+                <MudButton StartIcon="@Icons.Material.Filled.Refresh" 
+                          Color="Color.Secondary" 
+                          Variant="Variant.Outlined"
+                          OnClick="RefreshData">
+                    Refresh
+                </MudButton>
+            </div>
+        </div>
+    </MudItem>
+
+    <!-- Summary Cards Row -->
+    <MudItem xs="12" sm="6" md="3">
+        <MudCard Elevation="2" Class="pa-4 mud-height-full">
+            <MudCardContent>
+                <div class="d-flex justify-space-between align-center">
+                    <div>
+                        <MudText Typo="Typo.h4" Color="Color.Primary">@_totalParcels</MudText>
+                        <MudText Typo="Typo.body1" GutterBottom="true">Total Parcels</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Success">
+                            <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Size="Size.Small" />
+                            +5.2% from last month
+                        </MudText>
+                    </div>
+                    <MudAvatar Color="Color.Primary" Size="Size.Large">
+                        <MudIcon Icon="@Icons.Material.Filled.LocalShipping" />
+                    </MudAvatar>
+                </div>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="3">
+        <MudCard Elevation="2" Class="pa-4 mud-height-full">
+            <MudCardContent>
+                <div class="d-flex justify-space-between align-center">
+                    <div>
+                        <MudText Typo="Typo.h4" Color="Color.Success">@_deliveredParcels</MudText>
+                        <MudText Typo="Typo.body1" GutterBottom="true">Delivered</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Success">
+                            <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Size="Size.Small" />
+                            +12.1% this week
+                        </MudText>
+                    </div>
+                    <MudAvatar Color="Color.Success" Size="Size.Large">
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" />
+                    </MudAvatar>
+                </div>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="3">
+        <MudCard Elevation="2" Class="pa-4 mud-height-full">
+            <MudCardContent>
+                <div class="d-flex justify-space-between align-center">
+                    <div>
+                        <MudText Typo="Typo.h4" Color="Color.Warning">@_inTransitParcels</MudText>
+                        <MudText Typo="Typo.body1" GutterBottom="true">In Transit</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Info">
+                            <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Size="Size.Small" />
+                            Real-time tracking
+                        </MudText>
+                    </div>
+                    <MudAvatar Color="Color.Warning" Size="Size.Large">
+                        <MudIcon Icon="@Icons.Material.Filled.DirectionsCar" />
+                    </MudAvatar>
+                </div>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="3">
+        <MudCard Elevation="2" Class="pa-4 mud-height-full">
+            <MudCardContent>
+                <div class="d-flex justify-space-between align-center">
+                    <div>
+                        <MudText Typo="Typo.h4" Color="Color.Error">@_delayedParcels</MudText>
+                        <MudText Typo="Typo.body1" GutterBottom="true">Delayed</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Error">
+                            <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Small" />
+                            Requires attention
+                        </MudText>
+                    </div>
+                    <MudAvatar Color="Color.Error" Size="Size.Large">
+                        <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" />
+                    </MudAvatar>
+                </div>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <!-- Charts and Map Row -->
+    <MudItem xs="12" md="8">
+        <MudCard Elevation="2" Class="pa-6 mud-height-full">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">Shipment Volume Trends</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        Track daily shipment volumes and identify peak periods
+                    </MudText>
+                </CardHeaderContent>
+                <CardHeaderActions>
+                    <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" Direction="Direction.Bottom" OffsetX="true">
+                        <MudMenuItem OnClick="@(() => {})">Export Data</MudMenuItem>
+                        <MudMenuItem OnClick="@(() => {})">View Details</MudMenuItem>
+                        <MudMenuItem OnClick="@(() => {})">Configure Chart</MudMenuItem>
+                    </MudMenu>
+                </CardHeaderActions>
+            </MudCardHeader>
+            <MudCardContent>
+                <ShipmentVolumeChart Data="@_chartData" IsLoading="@_isLoading" />
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" md="4">
+        <MudCard Elevation="2" Class="pa-6 mud-height-full">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">Delivery Performance</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        Key performance indicators
+                    </MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <div class="d-flex flex-column ga-4">
+                    <div>
+                        <div class="d-flex justify-space-between align-center mb-2">
+                            <MudText Typo="Typo.body2">On Time Delivery</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Success" Class="font-weight-bold">94.2%</MudText>
+                        </div>
+                        <MudProgressLinear Color="Color.Success" Rounded="true" Size="Size.Medium" Value="94.2" />
+                    </div>
+                    
+                    <div>
+                        <div class="d-flex justify-space-between align-center mb-2">
+                            <MudText Typo="Typo.body2">Same Day Delivery</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Info" Class="font-weight-bold">78.5%</MudText>
+                        </div>
+                        <MudProgressLinear Color="Color.Info" Rounded="true" Size="Size.Medium" Value="78.5" />
+                    </div>
+                    
+                    <div>
+                        <div class="d-flex justify-space-between align-center mb-2">
+                            <MudText Typo="Typo.body2">Customer Satisfaction</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Primary" Class="font-weight-bold">91.8%</MudText>
+                        </div>
+                        <MudProgressLinear Color="Color.Primary" Rounded="true" Size="Size.Medium" Value="91.8" />
+                    </div>
+
+                    <MudDivider Class="my-3" />
+                    
+                    <div class="d-flex justify-center">
+                        <MudButton StartIcon="@Icons.Material.Filled.TrendingUp" 
+                                  Color="Color.Primary" 
+                                  Variant="Variant.Outlined" 
+                                  Size="Size.Small"
+                                  OnClick="@(() => {})">
+                            View Performance Report
+                        </MudButton>
+                    </div>
+                </div>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <!-- Map and Recent Activity Row -->
+    <MudItem xs="12" md="8">
+        <MudCard Elevation="2" Class="pa-6 mud-height-full">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">Live Parcel Tracking Map</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        Real-time locations of active shipments
+                    </MudText>
+                </CardHeaderContent>
+                <CardHeaderActions>
+                    <MudIconButton Icon="@Icons.Material.Filled.Fullscreen" Color="Color.Default" Title="Fullscreen" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Refresh" Color="Color.Default" Title="Refresh" OnClick="RefreshData" />
+                </CardHeaderActions>
+            </MudCardHeader>
+            <MudCardContent>
+                <ParcelTrackingMap Parcels="@_activeParcels" IsLoading="@_isLoading" />
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" md="4">
+        <MudCard Elevation="2" Class="pa-6 mud-height-full">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">Recent Activity</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        Latest parcel status updates
+                    </MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudTimeline TimelineOrientation="TimelineOrientation.Vertical" TimelinePosition="TimelinePosition.Start">
+                    @foreach (var activity in _recentActivities)
+                    {
+                        <MudTimelineItem Color="@GetActivityColor(activity.Status)" Size="Size.Small">
+                            <ItemContent>
+                                <div class="d-flex justify-space-between align-center">
+                                    <div>
+                                        <MudText Typo="Typo.body2" Class="font-weight-bold">@activity.TrackingNumber</MudText>
+                                        <MudText Typo="Typo.body2">@activity.Status</MudText>
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">@activity.Timestamp.ToString("MMM dd, HH:mm")</MudText>
+                                    </div>
+                                    <MudChip T="string" Size="Size.Small" Color="@GetActivityColor(activity.Status)" Variant="Variant.Text">
+                                        @activity.Status
+                                    </MudChip>
+                                </div>
+                            </ItemContent>
+                        </MudTimelineItem>
+                    }
+                </MudTimeline>
+                
+                <div class="d-flex justify-center mt-4">
+                    <MudButton StartIcon="@Icons.Material.Filled.History" 
+                              Color="Color.Primary" 
+                              Variant="Variant.Text" 
+                              Size="Size.Small"
+                              OnClick="@(() => {})">
+                        View All Activity
+                    </MudButton>
+                </div>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <!-- Quick Actions Row -->
+    <MudItem xs="12">
+        <MudCard Elevation="2" Class="pa-6">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">Quick Actions</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        Frequently used operations for efficient parcel management
+                    </MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudGrid>
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudButton StartIcon="@Icons.Material.Filled.Add" 
+                                  Color="Color.Primary" 
+                                  Variant="Variant.Filled" 
+                                  FullWidth="true"
+                                  Size="Size.Large"
+                                  Class="pa-4"
+                                  OnClick="CreateParcel">
+                            Create New Parcel
+                        </MudButton>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudButton StartIcon="@Icons.Material.Filled.Search" 
+                                  Color="Color.Secondary" 
+                                  Variant="Variant.Outlined" 
+                                  FullWidth="true"
+                                  Size="Size.Large"
+                                  Class="pa-4"
+                                  OnClick="@(() => {})">
+                            Track Parcel
+                        </MudButton>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudButton StartIcon="@Icons.Material.Filled.FileDownload" 
+                                  Color="Color.Info" 
+                                  Variant="Variant.Outlined" 
+                                  FullWidth="true"
+                                  Size="Size.Large"
+                                  Class="pa-4"
+                                  OnClick="ExportReport">
+                            Export Report
+                        </MudButton>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudButton StartIcon="@Icons.Material.Filled.Settings" 
+                                  Color="Color.Default" 
+                                  Variant="Variant.Outlined" 
+                                  FullWidth="true"
+                                  Size="Size.Large"
+                                  Class="pa-4"
+                                  OnClick="@(() => {})">
+                            System Settings
+                        </MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+@if (_isLoading)
+{
+    <MudOverlay @bind-Visible="_isLoading" DarkBackground="true" Absolute="true">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    </MudOverlay>
+}
+
+@code {
+    private bool _isLoading = true;
+    private int _totalParcels = 0;
+    private int _deliveredParcels = 0;
+    private int _inTransitParcels = 0;
+    private int _delayedParcels = 0;
+    
+    private List<ActivityItem> _recentActivities = new();
+    private List<Parcel> _activeParcels = new();
+    private List<ChartDataPoint> _chartData = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboardData();
+    }
+
+    private async Task LoadDashboardData()
+    {
+        _isLoading = true;
+        
+        try
+        {
+            // Simulate API calls with demo data
+            await Task.Delay(1000); // Simulate network delay
+            
+            _totalParcels = 1247;
+            _deliveredParcels = 1156;
+            _inTransitParcels = 78;
+            _delayedParcels = 13;
+            
+            _recentActivities = GenerateRecentActivities();
+            _activeParcels = GenerateActiveParcels();
+            _chartData = GenerateChartData();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading dashboard data: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task RefreshData()
+    {
+        Snackbar.Add("Refreshing dashboard data...", Severity.Info);
+        await LoadDashboardData();
+        Snackbar.Add("Dashboard data refreshed successfully!", Severity.Success);
+    }
+
+    private void CreateParcel()
+    {
+        Snackbar.Add("Opening create parcel dialog...", Severity.Info);
+        // TODO: Implement create parcel dialog
+    }
+
+    private void ExportReport()
+    {
+        Snackbar.Add("Exporting report...", Severity.Info);
+        // TODO: Implement export functionality
+    }
+
+    private Color GetActivityColor(string status) => status switch
+    {
+        "Delivered" => Color.Success,
+        "In Transit" or "Out for Delivery" => Color.Info,
+        "Delayed" => Color.Error,
+        "Picked Up" => Color.Warning,
+        _ => Color.Default
+    };
+
+    private List<ActivityItem> GenerateRecentActivities()
+    {
+        return new List<ActivityItem>
+        {
+            new() { TrackingNumber = "TRK001234", Status = "Delivered", Timestamp = DateTime.Now.AddMinutes(-5) },
+            new() { TrackingNumber = "TRK001235", Status = "In Transit", Timestamp = DateTime.Now.AddMinutes(-12) },
+            new() { TrackingNumber = "TRK001236", Status = "Picked Up", Timestamp = DateTime.Now.AddMinutes(-25) },
+            new() { TrackingNumber = "TRK001237", Status = "Delayed", Timestamp = DateTime.Now.AddMinutes(-35) },
+            new() { TrackingNumber = "TRK001238", Status = "Out for Delivery", Timestamp = DateTime.Now.AddMinutes(-45) },
+            new() { TrackingNumber = "TRK001239", Status = "Delivered", Timestamp = DateTime.Now.AddMinutes(-60) }
+        };
+    }
+
+    private List<Parcel> GenerateActiveParcels()
+    {
+        return new List<Parcel>
+        {
+            new() { TrackingNumber = "TRK001240", Status = "In Transit", CreatedAt = DateTime.Now.AddHours(-2) },
+            new() { TrackingNumber = "TRK001241", Status = "Out for Delivery", CreatedAt = DateTime.Now.AddHours(-4) },
+            new() { TrackingNumber = "TRK001242", Status = "In Transit", CreatedAt = DateTime.Now.AddHours(-6) }
+        };
+    }
+
+    private List<ChartDataPoint> GenerateChartData()
+    {
+        var data = new List<ChartDataPoint>();
+        var random = new Random();
+        
+        for (int i = 30; i >= 0; i--)
+        {
+            data.Add(new ChartDataPoint
+            {
+                Date = DateTime.Now.AddDays(-i).ToString("MMM dd"),
+                Value = random.Next(50, 200)
+            });
+        }
+        
+        return data;
+    }
+
+    private class ActivityItem
+    {
+        public string TrackingNumber { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public DateTime Timestamp { get; set; }
+    }
+
+    private class ChartDataPoint
+    {
+        public string Date { get; set; } = string.Empty;
+        public int Value { get; set; }
+    }
+}

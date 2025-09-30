@@ -1,11 +1,15 @@
 using ParcelTracking.Web.Components;
 using ParcelTracking.Web.Services;
+using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+// Add MudBlazor services
+builder.Services.AddMudServices();
 
 // Configure HttpClient for API calls
 var apiBaseUrl = builder.Configuration.GetValue<string>("ApiSettings:BaseUrl") ?? "https://localhost:5000";

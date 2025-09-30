@@ -4,6 +4,14 @@
 
 <PageTitle>Parcel Tracking System</PageTitle>
 
+@code {
+    protected override void OnInitialized()
+    {
+        // Redirect to admin dashboard by default
+        Navigation.NavigateTo("/admin", replace: true);
+    }
+}
+
 <div class="container">
     <div class="row">
         <div class="col-12 text-center">
@@ -20,7 +28,10 @@
                     <div class="card-body text-center">
                         <h5 class="card-title">Welcome back, @AuthService.Username!</h5>
                         <p class="card-text">You're logged in and ready to track your parcels.</p>
-                        <a href="/tracking" class="btn btn-primary btn-lg">
+                        <a href="/admin" class="btn btn-primary btn-lg">
+                            <i class="bi bi-speedometer2"></i> Admin Dashboard
+                        </a>
+                        <a href="/tracking" class="btn btn-secondary btn-lg ml-2">
                             <i class="bi bi-search"></i> Start Tracking
                         </a>
                     </div>
@@ -70,6 +81,9 @@
                                 <a href="/login" class="btn btn-primary btn-lg">
                                     <i class="bi bi-box-arrow-in-right"></i> Login
                                 </a>
+                                <a href="/admin" class="btn btn-success btn-lg ml-2">
+                                    <i class="bi bi-speedometer2"></i> Admin Dashboard
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -102,9 +116,9 @@
                         </div>
                         <div class="col-md-3">
                             <div class="text-center">
-                                <i class="bi bi-table fs-1 text-info"></i>
-                                <h6 class="mt-2">View All</h6>
-                                <small class="text-muted">See all parcels at once</small>
+                                <i class="bi bi-speedometer2 fs-1 text-info"></i>
+                                <h6 class="mt-2">Admin Dashboard</h6>
+                                <small class="text-muted">Comprehensive management</small>
                             </div>
                         </div>
                         <div class="col-md-3">

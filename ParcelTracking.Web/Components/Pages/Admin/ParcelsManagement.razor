@@ -1,0 +1,425 @@
+@using MudBlazor
+@inject ParcelTrackingService ParcelService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@page "/admin/parcels"
+@layout AdminLayout
+
+<PageTitle>Parcels Management - SimpleTrack Admin</PageTitle>
+
+<MudGrid>
+    <!-- Page Header -->
+    <MudItem xs="12">
+        <div class="d-flex justify-space-between align-center mb-6">
+            <div>
+                <MudText Typo="Typo.h3" GutterBottom="true">Parcels Management</MudText>
+                <MudText Typo="Typo.body1" Color="Color.Secondary">
+                    Manage and track all parcels in the system
+                </MudText>
+            </div>
+            <div class="d-flex ga-2">
+                <MudButton StartIcon="@Icons.Material.Filled.Add" 
+                          Color="Color.Primary" 
+                          Variant="Variant.Filled"
+                          OnClick="CreateNewParcel">
+                    New Parcel
+                </MudButton>
+                <MudButton StartIcon="@Icons.Material.Filled.FileDownload" 
+                          Color="Color.Secondary" 
+                          Variant="Variant.Outlined"
+                          OnClick="ExportParcels">
+                    Export
+                </MudButton>
+            </div>
+        </div>
+    </MudItem>
+
+    <!-- Filters and Search -->
+    <MudItem xs="12">
+        <MudCard Elevation="2" Class="pa-4 mb-6">
+            <MudGrid>
+                <MudItem xs="12" md="4">
+                    <MudTextField @bind-Value="_searchString"
+                                 Placeholder="Search by tracking number, customer..."
+                                 Adornment="Adornment.End"
+                                 AdornmentIcon="@Icons.Material.Filled.Search"
+                                 IconSize="Size.Medium"
+                                 Immediate="true"
+                                 OnAdornmentClick="ApplyFilters" />
+                </MudItem>
+                
+                <MudItem xs="12" md="2">
+                    <MudSelect @bind-Value="_selectedStatus" 
+                              Label="Status Filter" 
+                              Variant="Variant.Outlined"
+                              AnchorOrigin="Origin.BottomCenter">
+                        <MudSelectItem Value="@string.Empty">All Statuses</MudSelectItem>
+                        <MudSelectItem Value="@("Pending")">Pending</MudSelectItem>
+                        <MudSelectItem Value="@("In Transit")">In Transit</MudSelectItem>
+                        <MudSelectItem Value="@("Out for Delivery")">Out for Delivery</MudSelectItem>
+                        <MudSelectItem Value="@("Delivered")">Delivered</MudSelectItem>
+                        <MudSelectItem Value="@("Delayed")">Delayed</MudSelectItem>
+                        <MudSelectItem Value="@("Cancelled")">Cancelled</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                
+                <MudItem xs="12" md="2">
+                    <MudDatePicker @bind-Date="_fromDate" 
+                                  Label="From Date" 
+                                  Variant="Variant.Outlined" />
+                </MudItem>
+                
+                <MudItem xs="12" md="2">
+                    <MudDatePicker @bind-Date="_toDate" 
+                                  Label="To Date" 
+                                  Variant="Variant.Outlined" />
+                </MudItem>
+                
+                <MudItem xs="12" md="2">
+                    <div class="d-flex ga-2">
+                        <MudButton StartIcon="@Icons.Material.Filled.FilterList" 
+                                  Color="Color.Primary" 
+                                  Variant="Variant.Filled"
+                                  OnClick="ApplyFilters">
+                            Apply
+                        </MudButton>
+                        <MudButton StartIcon="@Icons.Material.Filled.Clear" 
+                                  Color="Color.Secondary" 
+                                  Variant="Variant.Outlined"
+                                  OnClick="ClearFilters">
+                            Clear
+                        </MudButton>
+                    </div>
+                </MudItem>
+            </MudGrid>
+        </MudCard>
+    </MudItem>
+
+    <!-- Data Table -->
+    <MudItem xs="12">
+        <MudCard Elevation="2">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <div class="d-flex justify-space-between align-center">
+                        <div>
+                            <MudText Typo="Typo.h6">Parcels (@_parcels.Count)</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                @_filteredParcels.Count() of @_parcels.Count parcels displayed
+                            </MudText>
+                        </div>
+                        <div class="d-flex ga-2">
+                            <MudIconButton Icon="@Icons.Material.Filled.Refresh" 
+                                          Color="Color.Default" 
+                                          Title="Refresh" 
+                                          OnClick="LoadParcels" />
+                            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default">
+                                <MudMenuItem OnClick="@(() => {})">Bulk Update Status</MudMenuItem>
+                                <MudMenuItem OnClick="@(() => {})">Bulk Delete</MudMenuItem>
+                                <MudDivider />
+                                <MudMenuItem OnClick="@(() => {})">Column Settings</MudMenuItem>
+                            </MudMenu>
+                        </div>
+                    </div>
+                </CardHeaderContent>
+            </MudCardHeader>
+            
+            <MudCardContent Class="pa-0">
+                <MudDataGrid T="ParcelDto" 
+                            Items="@_filteredParcels" 
+                            Sortable="true" 
+                            Filterable="true"
+                            QuickFilter="@_quickFilter"
+                            Hover="true" 
+                            ReadOnly="false"
+                            Loading="@_isLoading"
+                            Elevation="0">
+                    
+                    <Columns>
+                        <SelectColumn T="ParcelDto" />
+                        
+                        <PropertyColumn Property="x => x.TrackingNumber" Title="Tracking Number">
+                            <CellTemplate>
+                                <div class="d-flex align-center">
+                                    <MudLink Href="@($"/admin/parcels/{context.Item.Id}")" Color="Color.Primary">
+                                        @context.Item.TrackingNumber
+                                    </MudLink>
+                                    <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" 
+                                                  Size="Size.Small" 
+                                                  Color="Color.Default"
+                                                  OnClick="@(() => CopyToClipboard(context.Item.TrackingNumber))"
+                                                  Title="Copy tracking number" />
+                                </div>
+                            </CellTemplate>
+                        </PropertyColumn>
+                        
+                        <PropertyColumn Property="x => x.SenderName" Title="Sender" />
+                        <PropertyColumn Property="x => x.ReceiverName" Title="Receiver" />
+                        <PropertyColumn Property="x => x.DestinationAddress" Title="Destination" />
+                        
+                        <PropertyColumn Property="x => x.Status" Title="Status">
+                            <CellTemplate>
+                                <MudChip Color="@GetStatusColor(context.Item.Status)" 
+                                        Size="Size.Small" 
+                                        Variant="Variant.Text">
+                                    @context.Item.Status
+                                </MudChip>
+                            </CellTemplate>
+                        </PropertyColumn>
+                        
+                        <PropertyColumn Property="x => x.CreatedAt" Title="Created" Format="MMM dd, yyyy">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@context.Item.CreatedAt.ToString("MMM dd, yyyy")</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">@context.Item.CreatedAt.ToString("HH:mm")</MudText>
+                            </CellTemplate>
+                        </PropertyColumn>
+                        
+                        <PropertyColumn Property="x => x.EstimatedDelivery" Title="Est. Delivery" Format="MMM dd, yyyy" />
+                        
+                        <TemplateColumn CellClass="d-flex justify-end" Title="Actions" Sortable="false" Filterable="false">
+                            <CellTemplate>
+                                <MudButtonGroup Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small">
+                                    <MudButton StartIcon="@Icons.Material.Filled.Edit" 
+                                              OnClick="@(() => EditParcel(context.Item))">
+                                        Edit
+                                    </MudButton>
+                                    <MudMenu Icon="@Icons.Material.Filled.ArrowDropDown">
+                                        <MudMenuItem OnClick="@(() => ViewParcelDetails(context.Item))">
+                                            <div class="d-flex align-center">
+                                                <MudIcon Icon="@Icons.Material.Filled.Visibility" Class="mr-2" />
+                                                View Details
+                                            </div>
+                                        </MudMenuItem>
+                                        <MudMenuItem OnClick="@(() => UpdateStatus(context.Item))">
+                                            <div class="d-flex align-center">
+                                                <MudIcon Icon="@Icons.Material.Filled.Update" Class="mr-2" />
+                                                Update Status
+                                            </div>
+                                        </MudMenuItem>
+                                        <MudMenuItem OnClick="@(() => TrackParcel(context.Item))">
+                                            <div class="d-flex align-center">
+                                                <MudIcon Icon="@Icons.Material.Filled.MyLocation" Class="mr-2" />
+                                                Track
+                                            </div>
+                                        </MudMenuItem>
+                                        <MudDivider />
+                                        <MudMenuItem OnClick="@(() => DeleteParcel(context.Item))">
+                                            <div class="d-flex align-center">
+                                                <MudIcon Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Class="mr-2" />
+                                                <MudText Color="Color.Error">Delete</MudText>
+                                            </div>
+                                        </MudMenuItem>
+                                    </MudMenu>
+                                </MudButtonGroup>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                    
+                    <PagerContent>
+                        <MudDataGridPager T="ParcelDto" />
+                    </PagerContent>
+                </MudDataGrid>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private bool _isLoading = true;
+    private string _searchString = string.Empty;
+    private string _selectedStatus = string.Empty;
+    private DateTime? _fromDate;
+    private DateTime? _toDate;
+    
+    private List<ParcelDto> _parcels = new();
+    private IEnumerable<ParcelDto> _filteredParcels = new List<ParcelDto>();
+
+    private Func<ParcelDto, bool> _quickFilter => x =>
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+
+        if (x.TrackingNumber.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (x.SenderName.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (x.ReceiverName.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (x.DestinationAddress.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return false;
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadParcels();
+    }
+
+    private async Task LoadParcels()
+    {
+        _isLoading = true;
+        
+        try
+        {
+            // Simulate API call
+            await Task.Delay(1000);
+            
+            _parcels = GenerateSampleParcels();
+            ApplyFilters();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading parcels: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void ApplyFilters()
+    {
+        _filteredParcels = _parcels.AsEnumerable();
+
+        if (!string.IsNullOrEmpty(_selectedStatus))
+        {
+            _filteredParcels = _filteredParcels.Where(p => p.Status == _selectedStatus);
+        }
+
+        if (_fromDate.HasValue)
+        {
+            _filteredParcels = _filteredParcels.Where(p => p.CreatedAt >= _fromDate.Value);
+        }
+
+        if (_toDate.HasValue)
+        {
+            _filteredParcels = _filteredParcels.Where(p => p.CreatedAt <= _toDate.Value);
+        }
+
+        StateHasChanged();
+    }
+
+    private void ClearFilters()
+    {
+        _searchString = string.Empty;
+        _selectedStatus = string.Empty;
+        _fromDate = null;
+        _toDate = null;
+        ApplyFilters();
+    }
+
+    private async Task CreateNewParcel()
+    {
+        Snackbar.Add("Opening create parcel dialog...", Severity.Info);
+        // TODO: Implement create parcel dialog
+    }
+
+    private async Task EditParcel(ParcelDto parcel)
+    {
+        Snackbar.Add($"Editing parcel {parcel.TrackingNumber}...", Severity.Info);
+        // TODO: Implement edit parcel dialog
+    }
+
+    private async Task ViewParcelDetails(ParcelDto parcel)
+    {
+        Snackbar.Add($"Viewing details for {parcel.TrackingNumber}...", Severity.Info);
+        // TODO: Implement view details dialog
+    }
+
+    private async Task UpdateStatus(ParcelDto parcel)
+    {
+        Snackbar.Add($"Updating status for {parcel.TrackingNumber}...", Severity.Info);
+        // TODO: Implement status update dialog
+    }
+
+    private async Task TrackParcel(ParcelDto parcel)
+    {
+        Snackbar.Add($"Tracking parcel {parcel.TrackingNumber}...", Severity.Info);
+        // TODO: Navigate to tracking page
+    }
+
+    private async Task DeleteParcel(ParcelDto parcel)
+    {
+        bool? result = await DialogService.ShowMessageBox(
+            "Delete Parcel",
+            $"Are you sure you want to delete parcel {parcel.TrackingNumber}?",
+            yesText: "Delete", cancelText: "Cancel");
+
+        if (result == true)
+        {
+            Snackbar.Add($"Parcel {parcel.TrackingNumber} deleted successfully!", Severity.Success);
+            // TODO: Implement delete functionality
+        }
+    }
+
+    private async Task ExportParcels()
+    {
+        Snackbar.Add("Exporting parcels data...", Severity.Info);
+        // TODO: Implement export functionality
+    }
+
+    private async Task CopyToClipboard(string text)
+    {
+        Snackbar.Add("Tracking number copied to clipboard!", Severity.Success);
+        // TODO: Implement clipboard functionality
+    }
+
+    private Color GetStatusColor(string status) => status switch
+    {
+        "Delivered" => Color.Success,
+        "In Transit" or "Out for Delivery" => Color.Info,
+        "Delayed" => Color.Error,
+        "Pending" => Color.Warning,
+        "Cancelled" => Color.Default,
+        _ => Color.Default
+    };
+
+    private List<ParcelDto> GenerateSampleParcels()
+    {
+        var random = new Random();
+        var statuses = new[] { "Pending", "In Transit", "Out for Delivery", "Delivered", "Delayed", "Cancelled" };
+        var senders = new[] { "John Doe", "Jane Smith", "ABC Corp", "XYZ Ltd", "Bob Johnson" };
+        var receivers = new[] { "Alice Brown", "Charlie Wilson", "Tech Solutions", "Global Inc", "Sarah Davis" };
+        var addresses = new[] { 
+            "123 Main St, New York, NY", 
+            "456 Oak Ave, Los Angeles, CA", 
+            "789 Pine Rd, Chicago, IL",
+            "321 Elm St, Houston, TX",
+            "654 Maple Dr, Phoenix, AZ"
+        };
+
+        var parcels = new List<ParcelDto>();
+        
+        for (int i = 1; i <= 50; i++)
+        {
+            parcels.Add(new ParcelDto
+            {
+                Id = Guid.NewGuid(),
+                TrackingNumber = $"TRK{i:D6}",
+                SenderName = senders[random.Next(senders.Length)],
+                ReceiverName = receivers[random.Next(receivers.Length)],
+                DestinationAddress = addresses[random.Next(addresses.Length)],
+                Status = statuses[random.Next(statuses.Length)],
+                CreatedAt = DateTime.Now.AddDays(-random.Next(30)),
+                EstimatedDelivery = DateTime.Now.AddDays(random.Next(1, 7))
+            });
+        }
+
+        return parcels;
+    }
+
+    private class ParcelDto
+    {
+        public Guid Id { get; set; }
+        public string TrackingNumber { get; set; } = string.Empty;
+        public string SenderName { get; set; } = string.Empty;
+        public string ReceiverName { get; set; } = string.Empty;
+        public string DestinationAddress { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; }
+        public DateTime EstimatedDelivery { get; set; }
+    }
+}
