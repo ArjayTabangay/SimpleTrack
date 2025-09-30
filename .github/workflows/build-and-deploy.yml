@@ -12,8 +12,9 @@ on:
     types: [ published ]
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME_API: ${{ github.repository }}/api
-  IMAGE_NAME_WEB: ${{ github.repository }}/web
+  IMAGE_NAME_API: ${{ format('{0}/api', github.repository | toLower) }}
+  IMAGE_NAME_WEB: ${{ format('{0}/web', github.repository | toLower) }}
+  
 
 jobs:
   build-and-test:
