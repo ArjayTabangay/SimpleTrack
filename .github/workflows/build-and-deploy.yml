@@ -6,15 +6,13 @@ on:
   pull_request:
     branches: [ main ]
   workflow_dispatch:
-  schedule:
-    - cron: '0 2 * * *'  # Nightly build at 2 AM UTC
   release:
     types: [ published ]
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME_API: simpletrack/api
   IMAGE_NAME_WEB: simpletrack/web
-  
 
 jobs:
   build-and-test:
@@ -72,49 +70,27 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Extract metadata for API (labels)
-      id: meta-api
-      uses: docker/metadata-action@v5
-      with:
-        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_API }}
-        tags: |
-          type=raw,value=latest,enable={{is_default_branch}}
-
-    - name: Extract metadata for Web (labels)
-      id: meta-web
-      uses: docker/metadata-action@v5
-      with:
-        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_WEB }}
-        tags: |
-          type=raw,value=latest,enable={{is_default_branch}}
-
-    - name: Build and push API image (explicit tags)
+    - name: Build and push API image
       uses: docker/build-push-action@v5
       with:
         context: ./ParcelTracking.Api
         file: ./ParcelTracking.Api/Dockerfile
         push: true
         tags: |
-          ${{ format('{0}/{1}:latest', env.REGISTRY, env.IMAGE_NAME_API) }}
-          ${{ github.event.release.tag_name != '' && format('{0}/{1}:{2}', env.REGISTRY, env.IMAGE_NAME_API, github.event.release.tag_name) || '' }}
-        labels: ${{ steps.meta-api.outputs.labels }}
+         ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_API }}:latest
+         ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_API }}:${{ github.event.release.tag_name }}
         platforms: linux/amd64,linux/arm64
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
 
-    - name: Build and push Web image (explicit tags)
+    - name: Build and push Web image
       uses: docker/build-push-action@v5
       with:
         context: ./ParcelTracking.Web
         file: ./ParcelTracking.Web/Dockerfile
         push: true
         tags: |
-          ${{ format('{0}/{1}:latest', env.REGISTRY, env.IMAGE_NAME_WEB) }}
-          ${{ github.event.release.tag_name != '' && format('{0}/{1}:{2}', env.REGISTRY, env.IMAGE_NAME_WEB, github.event.release.tag_name) || '' }}
-        labels: ${{ steps.meta-web.outputs.labels }}
+         ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_WEB }}:latest
+         ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_WEB }}:${{ github.event.release.tag_name }}
         platforms: linux/amd64,linux/arm64
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
 
   security-scan:
     name: Security Scan
