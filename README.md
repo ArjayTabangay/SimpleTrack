@@ -53,25 +53,56 @@ A modern, full-stack parcel tracking application built with .NET 9, Blazor Serve
    cd SimpleTrack
    ```
 
-2. **Start all services**
+2. **Start all services (production-simulation)**
    ```bash
-   docker compose up --build
+   docker compose up --build -d
    ```
 
-3. **Access the applications**
-   - Web Frontend: http://localhost:5001
-   - API Backend: http://localhost:5000
-   - API Documentation: http://localhost:5000/swagger
+3. **Access the applications (production-simulation)**
+   - Web Frontend: http://localhost:51001
+   - API Backend: http://localhost:51000
+   - API Documentation: http://localhost:51000/swagger
+
+### Running both prod-simulation and dev stacks simultaneously
+
+You can run the production-simulation stack and a separate development stack at the same time. The repo includes `docker-compose.yml` (prod-simulation) and `docker-compose.dev.yml` (dev overrides). The dev file uses different volumes and different host ports so data and ports won't collide.
+
+Recommended approach using project names to keep container/volume names isolated:
+
+1. Start the production-simulation stack (uses `docker-compose.yml`)
+   ```bash
+   docker compose -p simpletrack_prod up --build -d
+   ```
+
+2. Start the development stack with the override file (uses different host ports and volumes)
+   ```bash
+   docker compose -f docker-compose.yml -f docker-compose.dev.yml -p simpletrack_dev up --build -d
+   ```
+
+Notes:
+- prod stack host ports: API 51000, Web 51001, Postgres 55432, Redis 63790
+- dev stack host ports: API 52000, Web 52001, Postgres 55433, Redis 63791
+- Using different project names (`-p`) ensures Docker resource names (containers, networks, volumes) are prefixed and isolated.
+- Both stacks use separate volumes: `postgres_data` vs `postgres_data_dev`, `redis_data` vs `redis_data_dev`.
+
+To stop and remove one stack without affecting the other:
+```bash
+# stop/remove prod stack
+docker compose -p simpletrack_prod down -v
+
+# stop/remove dev stack
+docker compose -f docker-compose.yml -f docker-compose.dev.yml -p simpletrack_dev down -v
+```
 
 ### Local Development Setup
 
 1. **Start Infrastructure Services**
    ```bash
    # Start PostgreSQL
-   docker run --name postgres -e POSTGRES_DB=parceltracking -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgres:16-alpine
+   docker run --name postgres -e POSTGRES_DB=parceltracking -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -p 55432:5432 -d postgres:16-alpine
 
    # Start Redis
-   docker run --name redis -p 6379:6379 -d redis:7-alpine
+   docker run --name redis -p 63790:6379 -d redis:7-alpine
    ```
 
 2. **Run Database Migrations**
@@ -132,7 +163,7 @@ The application uses JWT tokens for authentication. Configure the JWT settings i
   },
   "AllowedOrigins": [
     "https://localhost:7001",
-    "http://localhost:5001"
+    "http://localhost:51001"
   ]
 }
 ```
@@ -141,7 +172,7 @@ The application uses JWT tokens for authentication. Configure the JWT settings i
 ```json
 {
   "ApiSettings": {
-    "BaseUrl": "https://localhost:5000"
+    "BaseUrl": "http://localhost:51000"
   }
 }
 ```
@@ -249,7 +280,7 @@ SimpleTrack/
 ## 🧪 Testing
 
 ### API Testing
-Use the built-in Swagger UI at `http://localhost:5000/swagger` to test API endpoints.
+Use the built-in Swagger UI at `http://localhost:51000/swagger` to test API endpoints.
 
 ### Integration Testing
 The solution supports both unit and integration testing patterns.

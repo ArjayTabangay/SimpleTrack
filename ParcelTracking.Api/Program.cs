@@ -12,6 +12,30 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Support reading secret files specified by env vars with *_FILE (Docker secrets pattern)
+var jwtKeyFile = Environment.GetEnvironmentVariable("Jwt__Key_FILE");
+if (!string.IsNullOrEmpty(jwtKeyFile) && File.Exists(jwtKeyFile))
+{
+    var jwtKeyValue = File.ReadAllText(jwtKeyFile).Trim();
+    builder.Configuration["Jwt:Key"] = jwtKeyValue;
+}
+var pgPasswordFile = Environment.GetEnvironmentVariable("POSTGRES_PASSWORD_FILE");
+if (!string.IsNullOrEmpty(pgPasswordFile) && File.Exists(pgPasswordFile))
+{
+    var pgPass = File.ReadAllText(pgPasswordFile).Trim();
+    // replace password placeholder in connection string or set env var
+    var defaultConn = builder.Configuration.GetConnectionString("DefaultConnection") ?? string.Empty;
+    if (!string.IsNullOrEmpty(defaultConn))
+    {
+        // if connection string contains a placeholder REPLACE_WITH_SECRET, replace it
+        if (defaultConn.Contains("REPLACE_WITH_SECRET"))
+        {
+            defaultConn = defaultConn.Replace("REPLACE_WITH_SECRET", pgPass);
+            builder.Configuration.GetSection("ConnectionStrings")["DefaultConnection"] = defaultConn;
+        }
+    }
+}
+
 // Add services to the container
 builder.Services.AddControllers();
 
@@ -21,7 +45,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
 
 // Configure Redis Cache
-var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
+var redisConnectionString = builder.Configuration.GetConnectionString("Redis") ?? builder.Configuration["ConnectionStrings:Redis"];
 builder.Services.AddStackExchangeRedisCache(options =>
 {
     options.Configuration = redisConnectionString;
@@ -72,7 +96,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowWebApp", policy =>
     {
-        policy.WithOrigins(builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? new[] { "https://localhost:7001", "http://localhost:5001" })
+        policy.WithOrigins(builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? new[] { "https://localhost:7001", "http://localhost:51001" })
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();

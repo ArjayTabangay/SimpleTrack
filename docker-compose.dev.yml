@@ -1,10 +1,10 @@
-# Production docker-compose
-# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml -p app_prod up --build -d
+# Development override for docker-compose
+# Usage: docker compose -f docker-compose.dev.yml -p app_dev up --build -d
+# This file isolates local development by using different host ports and separate volumes
 
 version: '3.8'
 
 services:
-  # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
     environment:
@@ -12,9 +12,9 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
     ports:
-      - "55432:5432" # host 55432 -> container 5432 (non-default host port)
+      - "127.0.0.1:55433:5432" # dev host 55433 -> container 5432 (different from prod 55432)
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data_dev:/var/lib/postgresql/data
     networks:
       - parceltracking-network
     healthcheck:
@@ -23,13 +23,12 @@ services:
       timeout: 5s
       retries: 5
 
-  # Redis Cache
   redis:
     image: redis:7-alpine
     ports:
-      - "63795:6379" # host 63795 -> container 6379 (non-default host port)
+      - "127.0.0.1:63799:6379" # dev host 63799 -> container 6379 (different from prod 63795)
     volumes:
-      - redis_data:/data
+      - redis_data_dev:/data
     networks:
       - parceltracking-network
     healthcheck:
@@ -38,21 +37,20 @@ services:
       timeout: 5s
       retries: 5
 
-  # API Service
   api:
     build:
       context: .
       dockerfile: ParcelTracking.Api/Dockerfile
     environment:
-      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:80
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=parceltracking;Username=postgres;Password=${POSTGRES_PASSWORD:-postgres123};Port=5432
       - ConnectionStrings__Redis=redis:6379
-      - Jwt__Key=${JWT_SECRET_KEY:-your-super-secure-jwt-key-for-production-use-change-this-key}
       - Jwt__Issuer=ParcelTracking.Api
       - Jwt__Audience=ParcelTracking.Client
+      - Jwt__Key=${JWT_SECRET_KEY:-development-jwt-key-for-local-testing-only-not-secure-for-production}
     ports:
-      - "52000:80" # host 52000 -> container 80 (non-default host port)
+      - "53000:80" # dev host 53000 -> container 80 (different from prod 52000)
     depends_on:
       postgres:
         condition: service_healthy
@@ -67,17 +65,16 @@ services:
       retries: 3
     restart: unless-stopped
 
-  # Web Frontend Service
   web:
     build:
       context: .
       dockerfile: ParcelTracking.Web/Dockerfile
     environment:
-      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:80
       - ApiSettings__BaseUrl=http://api:80
     ports:
-      - "41001:80" # host 41001 -> container 80 (non-default host port)
+      - "42001:80" # dev host 42001 -> container 80 (different from prod 51001)
     depends_on:
       - api
     networks:
@@ -89,14 +86,12 @@ services:
       retries: 3
     restart: unless-stopped
 
-# Volumes for persistent data
 volumes:
-  postgres_data:
+  postgres_data_dev:
     driver: local
-  redis_data:
+  redis_data_dev:
     driver: local
 
-# Networks
 networks:
   parceltracking-network:
     driver: bridge
