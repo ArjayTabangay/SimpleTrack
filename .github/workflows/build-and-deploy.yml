@@ -12,8 +12,8 @@ on:
     types: [ published ]
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME_API: ${{ toLower(format('{0}/api', github.repository)) }}
-  IMAGE_NAME_WEB: ${{ toLower(format('{0}/web', github.repository)) }}
+  IMAGE_NAME_API: ${{ github.repository }}/api
+  IMAGE_NAME_WEB: ${{ github.repository }}/web
 
 jobs:
   build-and-test:
@@ -81,7 +81,6 @@ jobs:
           type=ref,event=pr
           type=sha,prefix={{branch}}-
           type=raw,value=latest,enable={{is_default_branch}}
-
     - name: Extract metadata for Web
       id: meta-web
       uses: docker/metadata-action@v5
@@ -92,7 +91,6 @@ jobs:
           type=ref,event=pr
           type=sha,prefix={{branch}}-
           type=raw,value=latest,enable={{is_default_branch}}
-
     - name: Build and push API image
       uses: docker/build-push-action@v5
       with:
