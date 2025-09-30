@@ -72,45 +72,45 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Extract metadata for API
+    - name: Extract metadata for API (labels)
       id: meta-api
       uses: docker/metadata-action@v5
       with:
         images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_API }}
         tags: |
-          type=ref,event=branch
-          type=ref,event=pr
-          type=sha,prefix={{branch}}-
           type=raw,value=latest,enable={{is_default_branch}}
-    - name: Extract metadata for Web
+
+    - name: Extract metadata for Web (labels)
       id: meta-web
       uses: docker/metadata-action@v5
       with:
         images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_WEB }}
         tags: |
-          type=ref,event=branch
-          type=ref,event=pr
-          type=sha,prefix={{branch}}-
           type=raw,value=latest,enable={{is_default_branch}}
-    - name: Build and push API image
+
+    - name: Build and push API image (explicit tags)
       uses: docker/build-push-action@v5
       with:
-        context: .
+        context: ./ParcelTracking.Api
         file: ./ParcelTracking.Api/Dockerfile
         push: true
-        tags: ${{ steps.meta-api.outputs.tags }}
+        tags: |
+          ${{ format('{0}/{1}:latest', env.REGISTRY, env.IMAGE_NAME_API) }}
+          ${{ github.event.release.tag_name != '' && format('{0}/{1}:{2}', env.REGISTRY, env.IMAGE_NAME_API, github.event.release.tag_name) || '' }}
         labels: ${{ steps.meta-api.outputs.labels }}
         platforms: linux/amd64,linux/arm64
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
-    - name: Build and push Web image
+    - name: Build and push Web image (explicit tags)
       uses: docker/build-push-action@v5
       with:
-        context: .
+        context: ./ParcelTracking.Web
         file: ./ParcelTracking.Web/Dockerfile
         push: true
-        tags: ${{ steps.meta-web.outputs.tags }}
+        tags: |
+          ${{ format('{0}/{1}:latest', env.REGISTRY, env.IMAGE_NAME_WEB) }}
+          ${{ github.event.release.tag_name != '' && format('{0}/{1}:{2}', env.REGISTRY, env.IMAGE_NAME_WEB, github.event.release.tag_name) || '' }}
         labels: ${{ steps.meta-web.outputs.labels }}
         platforms: linux/amd64,linux/arm64
         cache-from: type=gha
