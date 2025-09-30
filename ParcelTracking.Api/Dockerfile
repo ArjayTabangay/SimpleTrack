@@ -22,10 +22,6 @@ RUN dotnet build "ParcelTracking.Api.csproj" -c Release -o /app/build
 FROM build AS publish
 RUN dotnet publish "ParcelTracking.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
-# Install EF Core tools for migrations
-RUN dotnet tool install --global dotnet-ef
-ENV PATH="$PATH:/root/.dotnet/tools"
-
 # Create final image
 FROM base AS final
 WORKDIR /app
@@ -35,16 +31,12 @@ RUN apt-get update && apt-get install -y postgresql-client && rm -rf /var/lib/ap
 
 # Copy published application
 COPY --from=publish /app/publish .
-COPY --from=build /root/.dotnet/tools /root/.dotnet/tools
-ENV PATH="$PATH:/root/.dotnet/tools"
 
-# Create entrypoint script for running migrations
+# Create entrypoint script that waits for DB and starts the app (migrations applied in code)
 RUN echo '#!/bin/bash\n\
 echo "Starting ParcelTracking API..."\n\
 echo "Waiting for database to be ready..."\n\
 sleep 10\n\
-echo "Running database migrations..."\n\
-dotnet ef database update --no-build --verbose || echo "Migration failed, continuing..."\n\
 echo "Starting application..."\n\
 exec dotnet ParcelTracking.Api.dll' > /app/entrypoint.sh
 
