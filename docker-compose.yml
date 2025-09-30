@@ -1,5 +1,5 @@
 # Production docker-compose
-# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml -p app_prod up --build -d
+# Usage: docker compose -f docker-compose.yml -p app_prod up --build -d
 
 version: '3.8'
 
@@ -40,9 +40,7 @@ services:
 
   # API Service
   api:
-    build:
-      context: .
-      dockerfile: ParcelTracking.Api/Dockerfile
+    image: ghcr.io/arjaytabangay/simpletrack/api:latest
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:80
@@ -69,9 +67,7 @@ services:
 
   # Web Frontend Service
   web:
-    build:
-      context: .
-      dockerfile: ParcelTracking.Web/Dockerfile
+    image: ghcr.io/arjaytabangay/simpletrack/web:latest
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:80
