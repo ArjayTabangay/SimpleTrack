@@ -50,7 +50,7 @@ jobs:
     name: Build and Push Docker Images
     runs-on: ubuntu-latest
     needs: build-and-test
-    if: github.event_name == 'release' && github.event.action == 'published'
+    if: github.event_name == 'release' && github.ref == 'refs/heads/main' && github.event.action == 'published'
 
     permissions:
       contents: read
@@ -70,33 +70,51 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Extract metadata for API
+      id: meta-api
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_API }}
+        tags: |
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Extract metadata for Web
+      id: meta-web
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_WEB }}
+        tags: |
+          type=raw,value=latest,enable={{is_default_branch}}
+
     - name: Build and push API image
       uses: docker/build-push-action@v5
       with:
-        context: ./ParcelTracking.Api
+        context: .
         file: ./ParcelTracking.Api/Dockerfile
         push: true
-        tags: |
-         ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_API }}:latest
-         ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_API }}:${{ github.event.release.tag_name }}
+        tags: ${{ steps.meta-api.outputs.tags }}
+        labels: ${{ steps.meta-api.outputs.labels }}
         platforms: linux/amd64,linux/arm64
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
 
     - name: Build and push Web image
       uses: docker/build-push-action@v5
       with:
-        context: ./ParcelTracking.Web
+        context: .
         file: ./ParcelTracking.Web/Dockerfile
         push: true
-        tags: |
-         ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_WEB }}:latest
-         ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_WEB }}:${{ github.event.release.tag_name }}
+        tags: ${{ steps.meta-web.outputs.tags }}
+        labels: ${{ steps.meta-web.outputs.labels }}
         platforms: linux/amd64,linux/arm64
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
 
   security-scan:
     name: Security Scan
     runs-on: ubuntu-latest
     needs: build-and-push-images
-    if: github.event_name == 'release' && github.event.action == 'published'
+    if: github.event_name == 'release' && github.ref == 'refs/heads/main' && github.event.action == 'published'
 
     steps:
     - name: Run Trivy vulnerability scanner for API
@@ -122,7 +140,7 @@ jobs:
     name: Deployment Notification
     runs-on: ubuntu-latest
     needs: [build-and-push-images, security-scan]
-    if: always() && github.event_name == 'release' && github.event.action == 'published'
+    if: always() && github.event_name == 'release' && github.ref == 'refs/heads/main' && github.event.action == 'published'
 
     steps:
     - name: Notify deployment status
